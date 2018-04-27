@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: moodle
+  labels:
+    app: moodle
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: moodle
+    tier: frontend
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-moodle
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: sc-moodle
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-moodledata
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: sc-moodledata
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: moodle
+  labels:
+    app: moodle
+spec:
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: moodle
+        tier: frontend
+    spec:
+      containers:
+      - image: dstafford9999/frontend-web
+        imagePullPolicy: Always
+        name: moodle
+        ports:
+        - containerPort: 80
+          name: moodle
+        volumeMounts:
+        - name: sc-moodle
+          mountPath: /var/www/core
+        volumeMounts:
+        - name: sc-gibbondata
+          mountPath: /var/www/moodledata
+      volumes:
+      - name: sc-moodle
+        persistentVolumeClaim:
+          claimName: pvc-moodle
+      volumes:
+      - name: sc-moodledata
+        persistentVolumeClaim:
+          claimName: pvc-moodledata
